@@ -154,12 +154,180 @@
     </div>
 
     <script>
-        // 오류 없는 안전한 형태로 풀멍 7개, 물멍 7개 총 14개로 대폭 업그레이드!
         const samplePlaces = [
-            // --- 한적한 공원 (풀멍) 7개 ---
-            { type: 'park', name: '선유도공원 선유도이야기 앞', lat: 37.5424, lng: 126.8992, address: '서울 영등포구 선유로 343', link: 'https://map.kakao.com/link/map/37.5424,126.8992' },
-            { type: 'park', name: '서울숲 소생물지구 나무그늘', lat: 37.5443, lng: 127.0374, address: '서울 성동구 뚝섬로 273', link: 'https://map.kakao.com/link/map/37.5443,127.0374' },
-            { type: 'park', name: '율동공원 책테마파크 잔디밭', lat: 37.3785, lng: 127.1482, address: '경기 성남시 분당구 문정로 145', link: 'https://map.kakao.com/link/map/37.3785,127.1482' },
-            { type: 'park', name: '하늘공원 억새밭 오솔길', lat: 37.5681, lng: 126.8848, address: '서울 마포구 하늘공원로 95', link: 'https://map.kakao.com/link/map/37.5681,126.8848' },
-            { type: 'park', name: '올림픽공원 나홀로나무 언덕', lat: 37.5205, lng: 127.1214, address: '서울 송파구 올림픽로 424', link: 'https://map.kakao.com/link/map/37.5205,127.1214' },
-            { type: 'park', name: '일산호수공원 메타세쿼이아길', lat: 37.6536, lng: 126.7725, address: '경기 고양시 일산동구 호수로 731', link: '
+            { type: 'park', name: '선유도공원', lat: 37.5424, lng: 126.8992, address: '서울 영등포구 선유로 343', link: 'https://map.kakao.com/link/map/37.5424,126.8992' },
+            { type: 'park', name: '서울숲 소생물지구', lat: 37.5443, lng: 127.0374, address: '서울 성동구 뚝섬로 273', link: 'https://map.kakao.com/link/map/37.5443,127.0374' },
+            { type: 'park', name: '율동공원 책테마파크 앞', lat: 37.3785, lng: 127.1482, address: '경기 성남시 분당구 문정로 145', link: 'https://map.kakao.com/link/map/37.3785,127.1482' },
+            { type: 'ocean', name: '을왕리 해수욕장 조용한 스팟', lat: 37.4464, lng: 126.3712, address: '인천 중구 을왕동', link: 'https://map.kakao.com/link/map/37.4464,126.3712' },
+            { type: 'ocean', name: '오이도 빨간등대 인근', lat: 37.3452, lng: 126.6874, address: '경기 시흥시 정왕동', link: 'https://map.kakao.com/link/map/37.3452,126.6874' }
+        ];
+
+        let map;
+        let infoWindow;
+        let currentTab = 'park'; 
+        let markers = []; 
+        let userMarkerOverlay; 
+        
+        // 위치를 차단하거나 못 가져왔을 때 쓸 기본 중심점 (서울시청)
+        let userLocation = { lat: 37.5665, lng: 126.9780 }; 
+
+        // [핵심 변경] 페이지가 열리자마자 브라우저에 위치 권한 창부터 "강제로" 띄웁니다.
+        window.onload = function() {
+            if (navigator.geolocation) {
+                // 이 함수가 실행되는 순간 브라우저 상단에 권한 허용 팝업이 뜹니다.
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // 사용자가 [허용]을 눌렀을 때 실행되는 구간
+                        userLocation.lat = position.coords.latitude;
+                        userLocation.lng = position.coords.longitude;
+                        
+                        // 내 위치가 반영된 상태로 지도와 서비스 초기화
+                        initMap();
+                        showUserLocationMarker(new kakao.maps.LatLng(userLocation.lat, userLocation.lng));
+                    },
+                    function(error) {
+                        // 사용자가 [차단]을 누르거나 오류가 났을 때 실행되는 구간 (서울시청 기준으로 안전하게 띄움)
+                        console.log("위치 권한이 거부되었거나 오류가 발생했습니다.");
+                        initMap();
+                        showUserLocationMarker(new kakao.maps.LatLng(userLocation.lat, userLocation.lng));
+                    }
+                );
+            } else {
+                // GPS를 지원하지 않는 오래된 브라우저 대응
+                initMap();
+                showUserLocationMarker(new kakao.maps.LatLng(userLocation.lat, userLocation.lng));
+            }
+        };
+
+        // 지도를 생성하고 리스트를 그리는 함수
+        function initMap() {
+            const mapContainer = document.getElementById('map');
+            const mapOptions = {
+                center: new kakao.maps.LatLng(userLocation.lat, userLocation.lng),
+                level: 8
+            };
+            map = new kakao.maps.Map(mapContainer, mapOptions);
+            infoWindow = new kakao.maps.InfoWindow({ zIndex: 1 });
+            
+            // 지도 생성과 동시에 명소 리스트 렌더링
+            updateService();
+        }
+
+        // 내 위치를 나타내는 빨간색 커스텀 마커 표시 함수
+        function showUserLocationMarker(position) {
+            if (userMarkerOverlay) {
+                userMarkerOverlay.setMap(null);
+            }
+            // 빨간색 핀 커스텀 디자인
+            const userMarkerContent = `<div style="width: 14px; height: 14px; background-color: #ff4757; border: 3px solid #ffffff; border-radius: 50%; box-shadow: 0 0 8px rgba(255, 71, 87, 0.8);"></div>`;
+            userMarkerOverlay = new kakao.maps.CustomOverlay({
+                position: position,
+                content: userMarkerContent,
+                xAnchor: 0.5,
+                yAnchor: 0.5
+            });
+            userMarkerOverlay.setMap(map);
+        }
+
+        // 하버사인 거리 계산 공식
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const r = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return r * c;
+        }
+
+        // 데이터를 기반으로 사이드바 리스트와 마커를 뿌려주는 함수
+        function updateService() {
+            clearMarkers();
+            infoWindow.close();
+
+            let filteredPlaces = samplePlaces.filter(place => place.type === currentTab);
+
+            filteredPlaces.forEach(place => {
+                place.distance = calculateDistance(userLocation.lat, userLocation.lng, place.lat, place.lng);
+            });
+
+            filteredPlaces.sort((a, b) => a.distance - b.distance);
+
+            const listContainer = document.getElementById('placeList');
+            listContainer.innerHTML = ''; 
+
+            filteredPlaces.forEach((place, index) => {
+                const listItem = document.createElement('div');
+                listItem.className = 'place-item';
+                
+                const displayDistance = place.distance < 1 
+                    ? `${Math.round(place.distance * 1000)}m` 
+                    : `${place.distance.toFixed(1)}km`;
+
+                listItem.innerHTML = `
+                    <div class="place-name">${place.name}</div>
+                    <div class="place-address">${place.address}</div>
+                    <div class="place-distance">📍 내 위치에서 ${displayDistance}</div>
+                `;
+                
+                listItem.onclick = function() {
+                    focusOnPlace(place, markers[index]);
+                };
+                listContainer.appendChild(listItem);
+
+                const markerPosition = new kakao.maps.LatLng(place.lat, place.lng);
+                const marker = new kakao.maps.Marker({
+                    map: map,
+                    position: markerPosition
+                });
+
+                markers.push(marker);
+
+                kakao.maps.event.addListener(marker, 'click', function() {
+                    openPopup(place, marker);
+                });
+            });
+        }
+
+        function focusOnPlace(place, marker) {
+            const moveLocation = new kakao.maps.LatLng(place.lat, place.lng);
+            map.panTo(moveLocation);
+            openPopup(place, marker);
+        }
+
+        function openPopup(place, marker) {
+            const content = `
+                <div class="popup-content">
+                    <div class="popup-title">${place.name}</div>
+                    <div class="popup-address">${place.address}</div>
+                    <a class="popup-link" href="${place.link}" target="_blank">카카오맵에서 보기 →</a>
+                </div>
+            `;
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
+        }
+
+        function clearMarkers() {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+        }
+
+        function switchTab(type) {
+            currentTab = type;
+            const parkButton = document.getElementById('parkTab');
+            const oceanButton = document.getElementById('oceanTab');
+
+            if (type === 'park') {
+                parkButton.classList.add('active');
+                parkButton.classList.remove('ocean-tab');
+                oceanButton.classList.remove('active', 'ocean-tab');
+            } else {
+                oceanButton.classList.add('active', 'ocean-tab');
+                parkButton.classList.remove('active');
+            }
+            updateService();
+        }
+    </script>
+</body>
+</html>
