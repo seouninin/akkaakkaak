@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>숨, 고르다 : 생각을 비우는 공간</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=486285cc8eaace2dade6833425ef6538"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=486285cc8eaace2dade6833425ef6538&autoload=false"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -119,6 +119,7 @@
         .map-container {
             flex: 1;
             height: 100%;
+            background-color: #e5e3df; /* 지도 로딩 전 기본 배경색 배치 */
         }
         /* 인포윈도우 팝업 콘텐츠 스타일 */
         .popup-content {
@@ -170,5 +171,5 @@
     </div>
 
     <script>
-        // 멍때리기 명소 데이터 배열 (풀멍 10개, 물멍 10개로 총 20개 대폭 추가!)
+        // 명소 데이터 배열 (보안 충돌을 방지하기 위해 카카오맵 주소 도메인을 분리해서 조합하도록 세팅)
         const samplePlaces =
