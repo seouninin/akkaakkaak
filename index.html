@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>멍때리기 명소 추천 서비스</title>
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_MAP_APP_KEY"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=486285cc8eaace2dade6833425ef6538"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -49,10 +49,10 @@
         .tab-button.active {
             background-color: #ffffff;
             color: #2c3e50;
-            border-bottom: 3px solid #2ecc71; /* 풀멍은 초록 계열 느낌 */
+            border-bottom: 3px solid #2ecc71; /* 풀멍은 초록 계열 */
         }
         .tab-button.active.ocean-tab {
-            border-bottom: 3px solid #3498db; /* 물멍은 파랑 계열 느낌 */
+            border-bottom: 3px solid #3498db; /* 물멍은 파랑 계열 */
         }
         /* 리스트 영역 스타일 */
         .list-container {
@@ -90,3 +90,35 @@
             font-weight: bold;
         }
         /* 오른쪽 지도 영역 스타일 */
+        .map-container {
+            flex: 1;
+            height: 100%;
+        }
+        /* 인포윈도우 팝업 콘텐츠 스타일 */
+        .popup-content {
+            padding: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .popup-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .popup-link {
+            display: inline-block;
+            margin-top: 5px;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .popup-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="tab-group">
+                <button class="tab-button active" id="parkTab" onclick="switchTab('park')">🌳 한
